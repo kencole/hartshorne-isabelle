@@ -299,6 +299,112 @@ lemma (in affine_plane) contained_points: "\<forall> l.  \<exists> S T.  S\<note
 
   text \<open>\done\<close>
 
+  text \<open>\ken There are also some rather interesting results about affine planes that Hartshorne
+        gives as an exercise in the book. We prove them here: \done\<close>
+(*
+In an affine plane, show
+- any two lines have the same cardinality (i.e., show there's a 1-1 correspondence between them). 
+- any two pencils of lines have the same cardinality
+- the cardinalities of a pencil and of a line are the same. 
+- If there is a line with exactly n < infinity points, then the cardinality of the whole plane is n^2
+*)
+
+theorem (in affine_plane) all_lines_have_the_same_cardinality:
+  fixes l and m
+  fixes l_pts and m_pts
+  assumes "l_pts = {P. meets P l}"
+  assumes "m_pts = {P. meets P m}" 
+  shows "card l_pts = card m_pts"      
+proof -
+  obtain both_pts where intersection: "both_pts = l_pts \<inter> m_pts"
+    by simp
+  obtain just_l_pts where l_minus: "just_l_pts = l_pts - both_pts" 
+    by simp
+  obtain just_m_pts where m_minus: "just_m_pts = m_pts - both_pts" 
+    by simp
+
+  (* Create a bijection from l_pts to m_points to show they are the same size *)
+  show ?thesis
+  proof (cases "l = m")
+    case True
+    have "l = m \<Longrightarrow> l_pts = m_pts"
+      using assms(1) assms(2) by auto
+    thus ?thesis
+      by (simp add: True)
+  next
+    case False
+    show ?thesis
+    proof (cases "l || m")
+      case True  
+      have "l \<noteq> m" using local.False by auto
+      obtain P where P: "meets P l" using contained_point
+        by auto
+      obtain Q where Q: "meets Q m" using contained_point
+        by auto
+      have distinct: "P \<noteq> Q"
+        using False P Q True affine_plane_data.parallel_def by fastforce
+      obtain PQ where PQ: "(meets P PQ) \<and> (meets Q PQ)" 
+        using distinct a1 by blast
+      have one_intersection_l: "meets R l \<and> R \<noteq> P \<Longrightarrow> \<not> meets R PQ" 
+        by (metis False P PQ Q True parallel_def prop1P2)
+      have same_parallel: "n || PQ \<and> meets P n \<Longrightarrow> n = PQ"
+        using PQ parallel_def by auto
+      have "\<exists>! n. n || PQ \<and> meets P n" using a1
+        by (metis PQ affine_plane_data.parallel_def)
+      fix R
+      assume R: "meets R l \<and> R \<noteq> P"
+      have R_member: "meets R l"
+        by (simp add: R) 
+      have one_parallel: "\<exists>!n. PQ || n \<and> meets R n"
+        by (smt a2 parallel_def)
+      have one_intersection: "n || PQ \<Longrightarrow> \<exists>S. meets S n \<and> meets S m" 
+        by (metis False P PQ Q True equivp_def equivp_parallel parallel_def)
+      have all_have_unique_parallel: "meets S l \<Longrightarrow> \<exists>! n. PQ || n \<and> meets S n" 
+        by (smt a2 affine_plane_data.parallel_def)
+      have one_on_m: "(meets S n \<and> n || PQ \<and> meets S l) \<Longrightarrow> \<exists>!T. meets T n  \<and> meets T m"
+        by (smt False True affine_plane.prop1P2 affine_plane_axioms all_have_unique_parallel 
+             equivp_def equivp_parallel one_intersection reflexive_parallel symmetric_parallel)
+      have exists_parallel: "meets S l \<Longrightarrow> \<exists>!n. n || PQ \<and> meets S n"
+        using all_have_unique_parallel symmetric_parallel by blast
+      have exists_n_one_on_m: "meets S l \<Longrightarrow> 
+          \<exists>n. (meets S n \<and> n || PQ \<and> (\<exists> T. meets T n  \<and> meets T m))"
+        by (metis P PQ Q True affine_plane_data.parallel_def
+            all_have_unique_parallel equivp_def equivp_parallel)
+      have uniqueness: "meets S l \<Longrightarrow> 
+          \<exists>!n. (meets S n \<and> n || PQ \<and> (\<exists> T. meets T n  \<and> meets T m))"
+        using exists_n_one_on_m exists_parallel by blast
+      have uniqueness2: "meets S l \<Longrightarrow> 
+          \<exists>!n. (meets S n \<and> n || PQ \<and> (\<exists>! T. meets T n  \<and> meets T m))"
+        by (metis False True a1 affine_plane_data.parallel_def uniqueness)
+      have T_for_S: "meets S l \<Longrightarrow> \<exists>T. meets T m \<and> ((meets T n \<and> meets S n) \<longrightarrow> n || PQ)"
+        by (metis False True parallel_def prop1P2 uniqueness2) 
+      have "\<lbrakk>meets S l\<rbrakk> \<Longrightarrow> \<exists>T. meets T m \<and> ((meets T n \<and> meets S n) \<longrightarrow> n || PQ)"
+        using local.T_for_S by auto
+      obtain f where  maps_to_one_on_m: 
+       "f S = T \<Longrightarrow> (meets S l \<longrightarrow> (meets T m \<and> ((meets T n \<and> meets S n) \<longrightarrow> n || PQ)))" 
+        sorry
+      have "f P = Q" try
+      have domain_to_range: "meets S l \<Longrightarrow> meets (f S) m" try
+      have injective: "meets S l \<and> meets T l \<and> (f S = f T) \<Longrightarrow> S = T"  try
+      have surjective: "meets T m \<Longrightarrow> \<exists> S. meets S l \<and> f S = T" try
+
+
+
+    (*    domain_to_range:  "(S \<in> l_pts) \<longleftrightarrow> (bijection S) \<in> m_pts" try
+      thus ?thesis
+        sorry *)
+    next
+      case False
+      have "l \<noteq> m"
+        using False affine_plane_data.parallel_def by fastforce
+      thus ?thesis
+        sorry
+    qed
+  qed
+qed
+
+
+
   section  \<open> The real affine plane\<close>
   text \<open> Hartshorne mentioned, just after the definition of an affine plane and some notational 
 notes, that the ordinary affine plane is an example of an affine plane. We should prove 
